@@ -1,0 +1,3 @@
+[submodule "driver"]
+	path = driver
+	url = https://github.com/egorenar/snd-hda-codec-cs8409.git

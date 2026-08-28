@@ -1,0 +1,12 @@
+[Unit]
+Description=Enable iMac18,3 CS8409 internal speakers
+After=sound.target
+Wants=sound.target
+ConditionPathExists=/dev/snd/hwC0D0
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/libexec/cs8409-imac18/enable-speakers.sh
+
+[Install]
+WantedBy=multi-user.target
