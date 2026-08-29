@@ -4,8 +4,7 @@ This repository contains the Debian integration layer for restoring the
 internal speakers on an iMac18,3 with the CS8409 / CS42L83 codec:
 
 - module options;
-- a small `hda-verb` speaker-enable script;
-- a system service for applying the hardware settings;
+- a legacy `hda-verb` speaker-enable script retained for reference only;
 - a PipeWire/PulseAudio user service that selects the analog output safely;
 - an installer and an exportable integration patch;
 - a minimal driver patch that prevents the Apple CS8409 path from exposing
@@ -48,6 +47,12 @@ sudo apt install build-essential linux-headers-$(uname -r) git alsa-tools xz-uti
 
 Reboot after installation. Do not hot-reload the CS8409 module while PipeWire
 or WirePlumber is active: this can leave the audio session blocked.
+
+Do not enable `imac-speakers.service` or
+`cs8409-enable-speakers.service` with the patched driver. The driver performs
+its own CS42L83 playback and jack setup. A delayed service that writes HDA pin,
+converter, or GPIO verbs can interrupt an already running stream. The installer
+therefore does not install or enable the legacy speaker service.
 
 After signing back in, enable the per-user output selector once:
 
@@ -109,6 +114,15 @@ If WirePlumber is already in uninterruptible `D` state, restarting PipeWire or
 rebinding the codec cannot reliably recover that boot. Install the corrected
 module and reboot. Do not repeatedly unbind the PCI HDA device or codec from
 sysfs once the control path is wedged.
+
+If sound works immediately after boot and disappears later, check for a legacy
+speaker service and disable it:
+
+```sh
+sudo systemctl disable --now imac-speakers.service
+sudo systemctl disable --now cs8409-enable-speakers.service
+systemctl --user restart pipewire wireplumber pipewire-pulse
+```
 
 See [Troubleshooting](docs/troubleshooting.md) for diagnostic commands and safe
 recovery steps.

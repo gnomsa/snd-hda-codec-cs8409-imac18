@@ -75,12 +75,26 @@ WirePlumber is already in `D` state. Those operations can block in
 ## Useful service logs
 
 ```sh
-systemctl status cs8409-enable-speakers.service
-journalctl -b -u cs8409-enable-speakers.service
 systemctl --user status cs8409-select-analog-output.service
 journalctl --user -b -u cs8409-select-analog-output.service
 ```
 
-The system service enables the internal speaker pins and amplifier GPIO. The
-user service selects an already existing CS8409 analog sink; it does not create
-an ALSA device and does not treat HDMI as a fallback.
+The user service selects an already existing CS8409 analog sink; it does not
+create an ALSA device and does not treat HDMI as a fallback.
+
+## Sound disappears shortly after login
+
+The patched driver initializes CS42L83 playback itself. An older local service
+may run later and overwrite live HDA pin, converter, or GPIO state. This often
+looks like sound working briefly after boot and then vanishing while the stream
+continues to run.
+
+```sh
+systemctl status imac-speakers.service cs8409-enable-speakers.service
+sudo systemctl disable --now imac-speakers.service
+sudo systemctl disable --now cs8409-enable-speakers.service
+systemctl --user restart pipewire wireplumber pipewire-pulse
+```
+
+The repository keeps the old verb script as reference material but the
+installer intentionally does not install or enable it.
