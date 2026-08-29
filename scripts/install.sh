@@ -11,6 +11,7 @@ root_dir=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
 kernel=$(uname -r)
 
 command -v make >/dev/null || { echo 'make is required' >&2; exit 1; }
+command -v xz >/dev/null || { echo 'xz is required (package: xz-utils)' >&2; exit 1; }
 [[ -d "/lib/modules/$kernel/build" ]] || { echo "Missing headers for $kernel" >&2; exit 1; }
 [[ -f "$root_dir/driver/Makefile" ]] || { echo 'Driver submodule is missing; run git submodule update --init --recursive' >&2; exit 1; }
 
@@ -21,8 +22,12 @@ if grep -q 'spec->gen.automute_hook = cs_8409_automute;' \
 fi
 
 make -C "$root_dir/driver"
-install -D -m 0644 "$root_dir/driver/snd-hda-codec-cs8409.ko" \
-  "/lib/modules/$kernel/updates/snd-hda-codec-cs8409.ko"
+module_tmp=$(mktemp)
+trap 'rm -f "$module_tmp"' EXIT
+xz --check=crc32 -c "$root_dir/driver/snd-hda-codec-cs8409.ko" >"$module_tmp"
+install -D -m 0644 "$module_tmp" \
+  "/lib/modules/$kernel/updates/snd-hda-codec-cs8409.ko.xz"
+rm -f "/lib/modules/$kernel/updates/snd-hda-codec-cs8409.ko"
 depmod -a "$kernel"
 
 install -D -m 0644 "$root_dir/config/modprobe.d/imac18-speaker.conf" /etc/modprobe.d/imac18-speaker.conf

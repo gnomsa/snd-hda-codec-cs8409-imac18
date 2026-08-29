@@ -43,7 +43,7 @@ scripts and configuration files.
 Build dependencies on Debian:
 
 ```sh
-sudo apt install build-essential linux-headers-$(uname -r) git alsa-tools
+sudo apt install build-essential linux-headers-$(uname -r) git alsa-tools xz-utils
 ```
 
 Reboot after installation. Do not hot-reload the CS8409 module while PipeWire
@@ -79,6 +79,9 @@ modinfo -F filename snd-hda-codec-cs8409
 ```
 
 The path should be under `/lib/modules/$(uname -r)/updates/`.
+The installer compresses the module with an XZ CRC32 integrity check, matching
+Debian's kernel-module format. XZ's default CRC64 check is not accepted by this
+kernel's in-kernel module decompressor.
 
 ## Auto-Mute failure after reboot
 

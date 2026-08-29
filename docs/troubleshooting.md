@@ -27,6 +27,17 @@ The module filename should be below the running kernel's `updates/` directory,
 and `vermagic` must start with the exact output of `uname -r`. Reinstall after
 every kernel update.
 
+If `systemd-modules-load` reports `Invalid argument`, check for an unsupported
+XZ integrity method:
+
+```sh
+journalctl -b -k | grep 'decompression failed'
+xz -lv /lib/modules/$(uname -r)/updates/snd-hda-codec-cs8409.ko.xz
+```
+
+The check must be `CRC32`, not XZ's default `CRC64`. The repository installer
+always emits CRC32-compressed modules.
+
 ## Detect the Auto-Mute callback failure
 
 ```sh
