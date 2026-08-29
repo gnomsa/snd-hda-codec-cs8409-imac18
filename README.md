@@ -8,6 +8,8 @@ internal speakers on an iMac18,3 with the CS8409 / CS42L83 codec:
 - a system service for applying the hardware settings;
 - a PipeWire/PulseAudio user service that selects the analog output safely;
 - an installer and an exportable integration patch.
+- a minimal driver patch that prevents the Apple CS8409 path from exposing
+  the unsafe generic `Auto-Mute Mode` callback.
 
 ## Maintainer
 
@@ -34,8 +36,9 @@ sudo ./scripts/install.sh
 ```
 
 The installer builds the pinned external module against the running kernel,
-installs it under `/lib/modules/$(uname -r)/updates/`, and installs only this
-repository's scripts and configuration files.
+first applies the repository's automute fix, installs the resulting module
+under `/lib/modules/$(uname -r)/updates/`, and installs only this repository's
+scripts and configuration files.
 
 Reboot after installation. Do not hot-reload the CS8409 module while PipeWire
 or WirePlumber is active: this can leave the audio session blocked.
@@ -79,6 +82,15 @@ sudo reboot
 `patches/0001-imac18-cs8409-integration.patch` contains only the integration
 files authored for this repository. It contains no driver source, firmware, or
 compiled module.
+
+`patches/0002-cs8409-apple-disable-generic-automute.patch` is the minimal
+driver change authored by Gnomsa. It applies to the pinned external driver at
+commit `d8c9001`; the patch contains only changed context and does not copy the
+driver source tree. Apply it from inside the external driver's checkout:
+
+```sh
+git apply ../patches/0002-cs8409-apple-disable-generic-automute.patch
+```
 
 ## License
 

@@ -14,6 +14,12 @@ command -v make >/dev/null || { echo 'make is required' >&2; exit 1; }
 [[ -d "/lib/modules/$kernel/build" ]] || { echo "Missing headers for $kernel" >&2; exit 1; }
 [[ -f "$root_dir/driver/Makefile" ]] || { echo 'Driver submodule is missing; run git submodule update --init --recursive' >&2; exit 1; }
 
+automute_patch="$root_dir/patches/0002-cs8409-apple-disable-generic-automute.patch"
+if grep -q 'spec->gen.automute_hook = cs_8409_automute;' \
+  "$root_dir/driver/patch_cirrus_apple.h"; then
+  git -C "$root_dir/driver" apply "$automute_patch"
+fi
+
 make -C "$root_dir/driver"
 install -D -m 0644 "$root_dir/driver/snd-hda-codec-cs8409.ko" \
   "/lib/modules/$kernel/updates/snd-hda-codec-cs8409.ko"

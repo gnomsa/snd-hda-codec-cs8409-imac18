@@ -1,0 +1,51 @@
+From: Gnomsa <gnomsa88@gmail.com>
+Date: Sat, 29 Aug 2026 16:40:00 +0200
+Subject: [PATCH] ALSA: hda/cs8409: disable generic automute on Apple path
+
+The Apple CS8409/CS42L83 path performs jack routing through its own
+unsolicited-event handling.  Prevent the generic parser from exposing an
+Auto-Mute Mode control and do not register generic automute callbacks.
+
+WirePlumber restores ALSA mixer controls when a desktop session starts.  If
+Auto-Mute Mode is present, that restore can enter call_update_outputs() through
+the Apple driver's automute callback and leave the HDA control path wedged.
+
+Authored-by: Gnomsa <gnomsa88@gmail.com>
+Copyright (c) 2026 Gnomsa
+---
+ patch_cirrus_apple.h | 13 +++++++++++--
+ 1 file changed, 11 insertions(+), 2 deletions(-)
+
+diff --git a/patch_cirrus_apple.h b/patch_cirrus_apple.h
+index 9a9311e..10b5b94 100644
+--- a/patch_cirrus_apple.h
++++ b/patch_cirrus_apple.h
+@@ -1752,6 +1752,14 @@ static int cs_8409_apple_parse_auto_config(struct hda_codec *codec)
+ 
+         myprintk("snd_hda_intel: cs_8409_apple_parse_auto_config\n");
+ 
++	/*
++	 * The Apple CS8409 path handles jack routing itself.  Do not let the
++	 * generic HDA parser create an "Auto-Mute Mode" control: userspace
++	 * restores that control during login and call_update_outputs() then
++	 * enters callbacks which are not part of this routing implementation.
++	 */
++	spec->gen.suppress_auto_mute = 1;
++
+ 	err = snd_hda_parse_pin_defcfg(codec, &spec->gen.autocfg, NULL, 0);
+ 	if (err < 0)
+ 		return err;
+@@ -2946,7 +2954,10 @@ static int patch_cs8409_apple(struct hda_codec *codec)
+ 
+ 	spec->gen.pcm_capture_hook = cs_8409_capture_pcm_hook;
+ 
+-	spec->gen.automute_hook = cs_8409_automute;
++	/* Jack routing is handled by the CS42L83 unsolicited-event path above. */
++	spec->gen.automute_hook = NULL;
++	spec->gen.hp_automute_hook = NULL;
++	spec->gen.line_automute_hook = NULL;
+ 
+ 
+ 	// so this seems to be how we setup volume controls for the headphones
+-- 
+2.47.3
